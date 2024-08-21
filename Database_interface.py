@@ -2,8 +2,8 @@ from pymongo import MongoClient
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.llms import OpenAI
 from langchain.chains import RetrievalQA 
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import MongoDBAtlasVectorSearch
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import MongoDBAtlasVectorSearch
 import fitz  # PyMuPDF
 import mammoth  # For reading .doc files
 import docx  # For reading .docx files
