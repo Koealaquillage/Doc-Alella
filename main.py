@@ -12,7 +12,7 @@ MongoDBInterface = DataBaseInterface(dbName, collectionName,
 # Define a function to process the uploaded files
 def process_files(files):
     if files:
-        MongoDBInterface.load_all_files(files)
+        MongoDBInterface.import_documents(files)
         return "Files processed successfully."
     return "No files to process."
 
@@ -26,7 +26,7 @@ with gr.Blocks(theme=Base(), title="Question Answering App using Vector Search +
     gr.Markdown("# Question Answering App using Vector Search + RAG Architecture")
     
     # File upload component
-    file_upload = gr.File(label="Upload Files (TXT, PDF, DOCX)", file_count="multiple", type="file")
+    file_upload = gr.File(label="Upload Files (TXT, PDF, DOCX)", file_count="multiple", type="filepath")
     
     # Button for processing files
     process_button = gr.Button("Process Files", variant="primary")
