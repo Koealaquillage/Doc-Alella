@@ -33,7 +33,7 @@ class DataBaseInterface:
 
         return as_output, retriever_output
 
-     def load_txt_files(self, files):
+    def load_txt_files(self, files):
         data = []
         for file in files:
             with open(file.name, 'r') as f:
