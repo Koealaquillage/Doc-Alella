@@ -4,7 +4,7 @@ from Database_interface import DataBaseInterface
 import key_param
 
 # Database Interface Setup
-dbName = "RandomDocuments"
+dbName = "Randomcuments"
 collectionName = "collection_of_text_blobs"
 MongoDBInterface = DataBaseInterface(dbName, collectionName,
                                      key_param.MONGO_URI, key_param.openai_key)

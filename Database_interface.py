@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.llms import OpenAI
 from langchain_openai import OpenAIEmbeddings
@@ -20,11 +21,18 @@ class DataBaseInterface:
         self.vectorStore = MongoDBAtlasVectorSearch(self.collection, self.embeddings)
 
     def _connect_to_DB(self):
-        client = MongoClient(self.URI)
+        client = MongoClient(self.URI, server_api=ServerApi('1'))
+        try:
+            client.admin.command('ping')
+            print("Pinged your deployment. You successfully connected to MongoDB!")
+        except Exception as e:
+            print(e)
+
         return client[self.dbName][self.collectionName]  # Return the collection
     
     def query_data(self, query):
         docs = self.vectorStore.similarity_search(query, k=1)  # 'k' should be lowercase
+        print(docs)
         as_output = docs[0].page_content
 
         llm = OpenAI(openai_api_key=self.OPENAI_key, temperature=0)
