@@ -1,24 +1,25 @@
 import gradio as gr
 from gradio.themes.base import Base
 from Database_interface import DataBaseInterface
-import key_param
+import secret_key
 
 # Database Interface Setup
-dbName = "Randomcuments"
-collectionName = "collection_of_text_blobs"
-MongoDBInterface = DataBaseInterface(dbName, collectionName,
-                                     key_param.MONGO_URI, key_param.openai_key)
+indexName = "alelladoc"
+pineconeEnvironment = "alelladoc"
+PineConeinterface = DataBaseInterface(indexName, secret_key.openai_key,
+                                      secret_key.pinecone_key,
+                                      pineconeEnvironment)
 
 # Define a function to process the uploaded files
 def process_files(files):
     if files:
-        MongoDBInterface.import_documents(files)
+        PineConeinterface.import_documents(files)
         return "Files processed successfully."
     return "No files to process."
 
 # Define a function to query the database with a question
 def query_question(question):
-    output1, output2 = MongoDBInterface.query_data(question)
+    output1, output2 = PineConeinterface.query_data(question)
     return output1, output2
 
 # Gradio Interface
