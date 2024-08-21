@@ -1,9 +1,10 @@
 from pymongo import MongoClient
-from langchain_community.document_loaders import DirectoryLoader, PDFLoader, DocxLoader
+from langchain_community.document_loaders import DirectoryLoader, DocxLoader
 from langchain_community.llms import OpenAI
 from langchain.chains import RetrievalQA 
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import MongoDBAtlasVectorSearch
+import fitz  # PyMuPDF
 
 class DataBaseInterface:
 
@@ -12,7 +13,7 @@ class DataBaseInterface:
         self.dbName = dbName
         self.collectionName = collectionName
         self.URI = URI
-        self.OPENAI_key = OPENAI_key  # Add this to store the OpenAI key
+        self.OPENAI_key = OPENAI_key  # Store the OpenAI key
 
         self.embeddings = OpenAIEmbeddings(openai_api_key=self.OPENAI_key)
         self.collection = self._connect_to_DB()
@@ -41,12 +42,18 @@ class DataBaseInterface:
         return data
 
     def load_pdf_files(self, files):
-        pdf_loader = PDFLoader()
         data = []
         for file in files:
-            pdf_data = pdf_loader.load(file.name)
-            data.extend(pdf_data)
+            text = self._extract_text_from_pdf(file.name)
+            data.append(text)
         return data
+
+    def _extract_text_from_pdf(self, pdf_path):
+        doc = fitz.open(pdf_path)
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return text
 
     def load_docx_files(self, files):
         docx_loader = DocxLoader()
