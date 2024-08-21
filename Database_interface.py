@@ -1,8 +1,8 @@
 from pymongo import MongoClient
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.llms import OpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import MongoDBAtlasVectorSearch
+from langchain_openai import OpenAIEmbeddings
+from langchain_mongodb import MongoDBAtlasVectorSearch
 import fitz  # PyMuPDF
 import mammoth  # For reading .doc files
 import docx  # For reading .docx files
@@ -22,6 +22,17 @@ class DataBaseInterface:
     def _connect_to_DB(self):
         client = MongoClient(self.URI)
         return client[self.dbName][self.collectionName]  # Return the collection
+    
+    def query_data(self, query):
+        docs = self.vectorStore.similarity_search(query, k=1)  # 'k' should be lowercase
+        as_output = docs[0].page_content
+
+        llm = OpenAI(openai_api_key=self.OPENAI_key, temperature=0)
+        retriever = self.vectorStore.as_retriever()
+        qa = RetrievalQA.from_chain_type(llm, chain_type="stuff", retriever=retriever)
+        retriever_output = qa.run(query)
+
+        return as_output, retriever_output
 
     def load_txt_files(self, files):
         data = []
@@ -88,7 +99,7 @@ class DataBaseInterface:
         
         # Embed each document and store in the MongoDB collection
         for text in all_data:
-            embedding = self.embeddings.embed_text(text)
+            embedding = self.embeddings.embed_query(text)
             document = {
                 "text": text,
                 "embedding": embedding
