@@ -1,9 +1,8 @@
 from pymongo import MongoClient
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.llms import OpenAI
-from langchain.chains import RetrievalQA 
-from langchain_openai import OpenAIEmbeddings
-from langchain_mongodb import MongoDBAtlasVectorSearch
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import MongoDBAtlasVectorSearch
 import fitz  # PyMuPDF
 import mammoth  # For reading .doc files
 import docx  # For reading .docx files
@@ -11,7 +10,6 @@ import docx  # For reading .docx files
 class DataBaseInterface:
 
     def __init__(self, dbName, collectionName, URI, OPENAI_key):
-        self.collection = []
         self.dbName = dbName
         self.collectionName = collectionName
         self.URI = URI
@@ -24,17 +22,6 @@ class DataBaseInterface:
     def _connect_to_DB(self):
         client = MongoClient(self.URI)
         return client[self.dbName][self.collectionName]  # Return the collection
-
-    def query_data(self, query):
-        docs = self.vectorStore.similarity_search(query, k=1)  # 'k' should be lowercase
-        as_output = docs[0].page_content
-
-        llm = OpenAI(openai_api_key=self.OPENAI_key, temperature=0)
-        retriever = self.vectorStore.as_retriever()
-        qa = RetrievalQA.from_chain_type(llm, chain_type="stuff", retriever=retriever)
-        retriever_output = qa.run(query)
-
-        return as_output, retriever_output
 
     def load_txt_files(self, files):
         data = []
@@ -94,3 +81,31 @@ class DataBaseInterface:
 
         all_data = txt_data + pdf_data + docx_data + doc_data
         return all_data
+
+    def import_documents(self, files):
+        # Load all data from files
+        all_data = self.load_all_files(files)
+        
+        # Embed each document and store in the MongoDB collection
+        for text in all_data:
+            embedding = self.embeddings.embed_text(text)
+            document = {
+                "text": text,
+                "embedding": embedding
+            }
+            self.collection.insert_one(document)
+        print("Documents have been successfully imported into MongoDB.")
+
+# Example usage
+if __name__ == "__main__":
+    URI = "your_mongodb_connection_string"
+    OPENAI_key = "your_openai_api_key"
+    dbName = "your_database_name"
+    collectionName = "your_collection_name"
+
+    db_interface = DataBaseInterface(dbName, collectionName, URI, OPENAI_key)
+
+    # Assume you have a list of files (e.g., loaded via a file picker or similar)
+    files = [...]  # List of file-like objects
+
+    db_interface.import_documents(files)
