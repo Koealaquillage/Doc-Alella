@@ -1,46 +1,49 @@
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
-from langchain_community.document_loaders import DirectoryLoader
+import pinecone
 from langchain_community.llms import OpenAI
-from langchain_openai import OpenAIEmbeddings
-from langchain_mongodb import MongoDBAtlasVectorSearch
+from langchain.embeddings.openai import OpenAIEmbeddings
 import fitz  # PyMuPDF
 import mammoth  # For reading .doc files
 import docx  # For reading .docx files
 
 class DataBaseInterface:
 
-    def __init__(self, dbName, collectionName, URI, OPENAI_key):
-        self.dbName = dbName
-        self.collectionName = collectionName
-        self.URI = URI
+    def __init__(self, index_name, OPENAI_key, pinecone_api_key, pinecone_environment):
+        self.index_name = index_name
         self.OPENAI_key = OPENAI_key  # Store the OpenAI key
 
+        # Initialize OpenAI Embeddings
         self.embeddings = OpenAIEmbeddings(openai_api_key=self.OPENAI_key)
-        self.collection = self._connect_to_DB()
-        self.vectorStore = MongoDBAtlasVectorSearch(self.collection, self.embeddings)
 
-    def _connect_to_DB(self):
-        client = MongoClient(self.URI, server_api=ServerApi('1'))
-        try:
-            client.admin.command('ping')
-            print("Pinged your deployment. You successfully connected to MongoDB!")
-        except Exception as e:
-            print(e)
+        # Initialize Pinecone
+        pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
 
-        return client[self.dbName][self.collectionName]  # Return the collection
-    
-    def query_data(self, query):
-        docs = self.vectorStore.similarity_search(query, k=1)  # 'k' should be lowercase
-        print(docs)
-        as_output = docs[0].page_content
+        # Connect to or create the Pinecone index
+        if self.index_name not in pinecone.list_indexes():
+            self.index = pinecone.create_index(self.index_name, dimension=1536)
+        else:
+            self.index = pinecone.Index(self.index_name)
 
-        llm = OpenAI(openai_api_key=self.OPENAI_key, temperature=0)
-        retriever = self.vectorStore.as_retriever()
-        qa = RetrievalQA.from_chain_type(llm, chain_type="stuff", retriever=retriever)
-        retriever_output = qa.run(query)
+    def query_data(self, query, top_k=1):
+        # Convert the query to an embedding
+        query_embedding = self.embeddings.embed_query(query)
 
-        return as_output, retriever_output
+        # Perform similarity search in Pinecone
+        result = self.index.query(queries=[query_embedding], top_k=top_k)
+
+        # Retrieve the most relevant document
+        if result and result['matches']:
+            match = result['matches'][0]
+            document_id = match['id']
+            document = self.index.fetch(ids=[document_id])
+            as_output = document['results'][document_id]['text']
+
+            # Use OpenAI to generate an answer
+            llm = OpenAI(openai_api_key=self.OPENAI_key, temperature=0)
+            retriever_output = llm(as_output)
+
+            return as_output, retriever_output
+        else:
+            return None, "No documents found."
 
     def load_txt_files(self, files):
         data = []
@@ -105,24 +108,22 @@ class DataBaseInterface:
         # Load all data from files
         all_data = self.load_all_files(files)
         
-        # Embed each document and store in the MongoDB collection
-        for text in all_data:
+        # Embed each document and store in Pinecone
+        for i, text in enumerate(all_data):
             embedding = self.embeddings.embed_query(text)
-            document = {
-                "text": text,
-                "embedding": embedding
-            }
-            self.collection.insert_one(document)
-        print("Documents have been successfully imported into MongoDB.")
+            document_id = f"doc_{i}"
+            self.index.upsert(vectors=[(document_id, embedding, {"text": text})])
+        
+        print("Documents have been successfully imported into Pinecone.")
 
 # Example usage
 if __name__ == "__main__":
-    URI = "your_mongodb_connection_string"
+    pinecone_api_key = "your_pinecone_api_key"
+    pinecone_environment = "your_pinecone_environment"
     OPENAI_key = "your_openai_api_key"
-    dbName = "your_database_name"
-    collectionName = "your_collection_name"
+    index_name = "your_index_name"
 
-    db_interface = DataBaseInterface(dbName, collectionName, URI, OPENAI_key)
+    db_interface = DataBaseInterface(index_name, OPENAI_key, pinecone_api_key, pinecone_environment)
 
     # Assume you have a list of files (e.g., loaded via a file picker or similar)
     files = [...]  # List of file-like objects
