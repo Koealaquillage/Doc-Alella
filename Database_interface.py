@@ -1,13 +1,14 @@
 import pinecone
 from langchain_community.llms import OpenAI
 from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 from langchain_openai import OpenAIEmbeddings
 
 class DataBaseInterface:
 
     def __init__(self, index_name, OPENAI_key,
-                pinecone_api_key, pinecone_environment,
-                mongo_URI, mongo_db_name, mongo_collection_name):
+                pinecone_api_key, mongo_URI, 
+                mongo_db_name, mongo_collection_name):
         self.index_name = index_name
         self.OPENAI_key = OPENAI_key 
 
@@ -21,35 +22,39 @@ class DataBaseInterface:
 
         # Initialize Pinecone
         self.pc_key = pinecone_api_key
-        
+        self.index = self._connect_to_pc()
+
 
          # Initialize MongoDB
-        self.collection = _connect_to_DB()
-        self.mongo_collection = client[self.mongo_db_name][self.mongo_collection_name]
+        self.collection = self._connect_to_DB()
 
-        def _connect_to_DB(self):
-            client = MongoClient(self.mongo_URI, server_api=ServerApi('1'))
-            try:
-                client.admin.command('ping')
-                print("Pinged your deployment. You successfully connected to MongoDB!")
-            except Exception as e:
-                print(e)
+    def _connect_to_DB(self):
+        client = MongoClient(self.mongo_URI, server_api=ServerApi('1'))
+        try:
+            client.admin.command('ping')
+            print("Pinged your deployment. You successfully connected to MongoDB!")
+        except Exception as e:
+            print(e)
 
-        return client[self.dbName][self.collectionName]
+        return client[self.mongo_db_name][self.mongo_collection_name]
+
     
     def _connect_to_pc(self):
         pc = pinecone.Pinecone(api_key=self.pc_key)
 
         # Connect to or create the Pinecone index
         if self.index_name not in pc.list_indexes().names():
-                pc.create_index(name='my_index', dimension=1536,
-                                metric='euclidean',
-                                spec=pinecone.ServerlessSpec(
-                                    cloud='aws',
-                                    region='us-west-2')
+            pc.create_index(name=self.index_name,
+                                        dimension=1536,
+                                        metric='euclidean',
+                                        spec=pinecone.ServerlessSpec(
+                                        cloud='aws',
+                                        region='us-west-2')
         )
-        else:
-            self.index = pc.Index(self.index_name)
+        
+        return pc.Index(self.index_name)
+
+
 
     def query_data(self, query, top_k=1):
         # Convert the query to an embedding

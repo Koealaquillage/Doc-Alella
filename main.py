@@ -9,16 +9,17 @@ indexName = "alelladoc"
 dbName = "Randomcuments"
 collectionName = "collection_of_text_blobs"
 
+TextLoader = FileTextLoader()
+
 PineConeinterface = DataBaseInterface(indexName, secret_key.openai_key,
                                       secret_key.pinecone_key,
-                                      pineconeEnvironment, 
                                       secret_key.mongodb_uri, dbName,
                                       collectionName)
 
 # Define a function to process the uploaded files
 def process_files(files):
     if files:
-        text_data_from_files = FileTextLoader.load_all_files(files)
+        text_data_from_files = TextLoader.load_all_files(files)
         PineConeinterface.import_documents(text_data_from_files)
         return "Files processed successfully."
     return "No files to process."
