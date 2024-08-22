@@ -1,23 +1,44 @@
 import pinecone
 from langchain_community.llms import OpenAI
-
+from pymongo import MongoClient
 from langchain_openai import OpenAIEmbeddings
-import fitz 
-import mammoth 
-import docx  
 
 class DataBaseInterface:
 
-    def __init__(self, index_name, OPENAI_key, pinecone_api_key, pinecone_environment):
+    def __init__(self, index_name, OPENAI_key,
+                pinecone_api_key, pinecone_environment,
+                mongo_URI, mongo_db_name, mongo_collection_name):
         self.index_name = index_name
         self.OPENAI_key = OPENAI_key 
 
         # Initialize OpenAI Embeddings
         self.embeddings = OpenAIEmbeddings(openai_api_key=self.OPENAI_key)
 
-        # Initialize Pinecone
-        pc = pinecone.Pinecone(api_key=pinecone_api_key)
+        # Initialize MongoDB
+        self.mongo_URI = mongo_URI
+        self.mongo_db_name = mongo_db_name
+        self.mongo_collection_name = mongo_collection_name
 
+        # Initialize Pinecone
+        self.pc_key = pinecone_api_key
+        
+
+         # Initialize MongoDB
+        self.collection = _connect_to_DB()
+        self.mongo_collection = client[self.mongo_db_name][self.mongo_collection_name]
+
+     def _connect_to_DB(self):
+        client = MongoClient(self.mongo_URI, server_api=ServerApi('1'))
+        try:
+            client.admin.command('ping')
+            print("Pinged your deployment. You successfully connected to MongoDB!")
+        except Exception as e:
+            print(e)
+
+        return client[self.dbName][self.collectionName]
+    
+    def _connect_to_pc(self):
+        pc = pinecone.Pinecone(api_key=self.pc_key)
 
         # Connect to or create the Pinecone index
         if self.index_name not in pc.list_indexes().names():
@@ -52,71 +73,10 @@ class DataBaseInterface:
         else:
             return None, "No documents found."
 
-    def load_txt_files(self, files):
-        data = []
-        for file in files:
-            with open(file.name, 'r') as f:
-                data.append(f.read())
-        return data
-
-    def load_pdf_files(self, files):
-        data = []
-        for file in files:
-            text = self._extract_text_from_pdf(file.name)
-            data.append(text)
-        return data
-
-    def _extract_text_from_pdf(self, pdf_path):
-        doc = fitz.open(pdf_path)
-        text = ""
-        for page in doc:
-            text += page.get_text()
-        return text
-
-    def load_doc_files(self, files):
-        data = []
-        for file in files:
-            text = self._extract_text_from_doc(file.name)
-            data.append(text)
-        return data
-
-    def _extract_text_from_doc(self, doc_path):
-        with open(doc_path, "rb") as doc_file:
-            result = mammoth.convert_to_text(doc_file)
-            return result.value
-
-    def load_docx_files(self, files):
-        data = []
-        for file in files:
-            text = self._extract_text_from_docx(file.name)
-            data.append(text)
-        return data
-
-    def _extract_text_from_docx(self, docx_path):
-        doc = docx.Document(docx_path)
-        text = "\n".join([para.text for para in doc.paragraphs])
-        return text
-
-    def load_all_files(self, files):
-        txt_files = [file for file in files if file.name.endswith('.txt')]
-        pdf_files = [file for file in files if file.name.endswith('.pdf')]
-        docx_files = [file for file in files if file.name.endswith('.docx')]
-        doc_files = [file for file in files if file.name.endswith('.doc')]
-
-        txt_data = self.load_txt_files(txt_files)
-        pdf_data = self.load_pdf_files(pdf_files)
-        docx_data = self.load_docx_files(docx_files)
-        doc_data = self.load_doc_files(doc_files)
-
-        all_data = txt_data + pdf_data + docx_data + doc_data
-        return all_data
-
-    def import_documents(self, files):
-        # Load all data from files
-        all_data = self.load_all_files(files)
+    def import_documents(self, text_data_from_files):
         
         # Embed each document and store in Pinecone
-        for i, text in enumerate(all_data):
+        for i, text in enumerate(text_data_from_files):
             embedding = self.embeddings.embed_query(text)
             document_id = f"doc_{i}"
             self.index.upsert(vectors=[{"id": document_id,
