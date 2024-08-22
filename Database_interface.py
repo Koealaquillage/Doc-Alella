@@ -55,10 +55,11 @@ class DataBaseInterface:
     def query_data(self, query, top_k=1):
         # Convert the query to an embedding
         query_embedding = self.embeddings.embed_query(query)
-
         # Perform similarity search in Pinecone
-        result = self.index.query(queries=[query_embedding], top_k=top_k)
+        result = self.index.query(vector=query_embedding,
+                                  include_metadata=True, top_k=top_k)
 
+        print(result['matches'][0])
         # Retrieve the corresponding documents from MongoDB
         if result and result['matches']:
             mongo_ids = [match['metadata']['mongo_id'] for match in result['matches']]
