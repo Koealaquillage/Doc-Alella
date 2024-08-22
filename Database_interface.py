@@ -1,27 +1,34 @@
 import pinecone
 from langchain_community.llms import OpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
-import fitz  # PyMuPDF
-import mammoth  # For reading .doc files
-import docx  # For reading .docx files
+
+from langchain_openai import OpenAIEmbeddings
+import fitz 
+import mammoth 
+import docx  
 
 class DataBaseInterface:
 
     def __init__(self, index_name, OPENAI_key, pinecone_api_key, pinecone_environment):
         self.index_name = index_name
-        self.OPENAI_key = OPENAI_key  # Store the OpenAI key
+        self.OPENAI_key = OPENAI_key 
 
         # Initialize OpenAI Embeddings
         self.embeddings = OpenAIEmbeddings(openai_api_key=self.OPENAI_key)
 
         # Initialize Pinecone
-        pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
+        pc = pinecone.Pinecone(api_key=pinecone_api_key)
+
 
         # Connect to or create the Pinecone index
-        if self.index_name not in pinecone.list_indexes():
-            self.index = pinecone.create_index(self.index_name, dimension=1536)
+        if self.index_name not in pc.list_indexes().names():
+                pc.create_index(name='my_index', dimension=1536,
+                                metric='euclidean',
+                                spec=pinecone.ServerlessSpec(
+                                    cloud='aws',
+                                    region='us-west-2')
+        )
         else:
-            self.index = pinecone.Index(self.index_name)
+            self.index = pc.Index(self.index_name)
 
     def query_data(self, query, top_k=1):
         # Convert the query to an embedding
@@ -112,20 +119,8 @@ class DataBaseInterface:
         for i, text in enumerate(all_data):
             embedding = self.embeddings.embed_query(text)
             document_id = f"doc_{i}"
-            self.index.upsert(vectors=[(document_id, embedding, {"text": text})])
+            self.index.upsert(vectors=[{"id": document_id,
+                                        "values": embedding,
+                                        "metadata": {"genre": "comedy", "year": 2020}}])
         
         print("Documents have been successfully imported into Pinecone.")
-
-# Example usage
-if __name__ == "__main__":
-    pinecone_api_key = "your_pinecone_api_key"
-    pinecone_environment = "your_pinecone_environment"
-    OPENAI_key = "your_openai_api_key"
-    index_name = "your_index_name"
-
-    db_interface = DataBaseInterface(index_name, OPENAI_key, pinecone_api_key, pinecone_environment)
-
-    # Assume you have a list of files (e.g., loaded via a file picker or similar)
-    files = [...]  # List of file-like objects
-
-    db_interface.import_documents(files)
