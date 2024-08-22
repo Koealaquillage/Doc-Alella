@@ -27,13 +27,13 @@ class DataBaseInterface:
         self.collection = _connect_to_DB()
         self.mongo_collection = client[self.mongo_db_name][self.mongo_collection_name]
 
-     def _connect_to_DB(self):
-        client = MongoClient(self.mongo_URI, server_api=ServerApi('1'))
-        try:
-            client.admin.command('ping')
-            print("Pinged your deployment. You successfully connected to MongoDB!")
-        except Exception as e:
-            print(e)
+        def _connect_to_DB(self):
+            client = MongoClient(self.mongo_URI, server_api=ServerApi('1'))
+            try:
+                client.admin.command('ping')
+                print("Pinged your deployment. You successfully connected to MongoDB!")
+            except Exception as e:
+                print(e)
 
         return client[self.dbName][self.collectionName]
     
