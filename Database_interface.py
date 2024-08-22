@@ -1,5 +1,4 @@
 import pinecone
-from langchain_community.llms import OpenAI
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from langchain_openai import OpenAIEmbeddings
@@ -63,29 +62,26 @@ class DataBaseInterface:
         # Perform similarity search in Pinecone
         result = self.index.query(queries=[query_embedding], top_k=top_k)
 
-        # Retrieve the most relevant document
+        # Retrieve the corresponding documents from MongoDB
         if result and result['matches']:
-            match = result['matches'][0]
-            document_id = match['id']
-            document = self.index.fetch(ids=[document_id])
-            as_output = document['results'][document_id]['text']
-
-            # Use OpenAI to generate an answer
-            llm = OpenAI(openai_api_key=self.OPENAI_key, temperature=0)
-            retriever_output = llm(as_output)
-
-            return as_output, retriever_output
+            mongo_ids = [match['metadata']['mongo_id'] for match in result['matches']]
+            documents = self.mongo_collection.find({"_id": {"$in": mongo_ids}})
+            return list(documents)
         else:
-            return None, "No documents found."
+            return None
 
     def import_documents(self, text_data_from_files):
         
-        # Embed each document and store in Pinecone
-        for i, text in enumerate(text_data_from_files):
-            embedding = self.embeddings.embed_query(text)
-            document_id = f"doc_{i}"
-            self.index.upsert(vectors=[{"id": document_id,
+         for doc in text_data_from_files:
+            # Insert document text into MongoDB
+            mongo_result = self.mongo_collection.insert_one({"text": doc})
+            mongo_id = mongo_result.inserted_id
+
+            print("Documents have been successfully imported into MongoDB.")
+            # Generate embedding and store in Pinecone with MongoDB ID as metadata
+            embedding = self.embeddings.embed_query(doc)
+            self.index.upsert(vectors=[{"id": mongo_id,
                                         "values": embedding,
-                                        "metadata": {"genre": "comedy", "year": 2020}}])
-        
+                                        "metadata": {"mongo_id": str(mongo_id)}}])
+
         print("Documents have been successfully imported into Pinecone.")
