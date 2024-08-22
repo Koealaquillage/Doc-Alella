@@ -2,7 +2,7 @@ import gradio as gr
 from gradio.themes.base import Base
 from Database_interface import DataBaseInterface
 from FileTextLoader import FileTextLoader
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 import secret_key
 
 # Database Interface Setup
