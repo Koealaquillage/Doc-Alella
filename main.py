@@ -34,8 +34,8 @@ def query_question(question):
 
 def analyze_documents(documents):
     llm = OpenAI(openai_api_key=secret_key.openai_key, temperature=0)
-    as_output = ``
-    retriever_output = ``
+    as_output = ""
+    retriever_output = ""
     for document in documents:
         as_output = str.join([as_output, document])
         retriever_output = str.join([retriever_output,llm(as_output)])

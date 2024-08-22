@@ -18,14 +18,11 @@ class DataBaseInterface:
         self.mongo_URI = mongo_URI
         self.mongo_db_name = mongo_db_name
         self.mongo_collection_name = mongo_collection_name
+        self.mongo_collection = self._connect_to_DB()
 
         # Initialize Pinecone
         self.pc_key = pinecone_api_key
         self.index = self._connect_to_pc()
-
-
-         # Initialize MongoDB
-        self.collection = self._connect_to_DB()
 
     def _connect_to_DB(self):
         client = MongoClient(self.mongo_URI, server_api=ServerApi('1'))
@@ -77,11 +74,11 @@ class DataBaseInterface:
             mongo_result = self.mongo_collection.insert_one({"text": doc})
             mongo_id = mongo_result.inserted_id
 
-            print("Documents have been successfully imported into MongoDB.")
+            print("Document have been successfully imported into MongoDB.")
             # Generate embedding and store in Pinecone with MongoDB ID as metadata
             embedding = self.embeddings.embed_query(doc)
-            self.index.upsert(vectors=[{"id": mongo_id,
+            self.index.upsert(vectors=[{"id": str(mongo_id),
                                         "values": embedding,
                                         "metadata": {"mongo_id": str(mongo_id)}}])
 
-        print("Documents have been successfully imported into Pinecone.")
+            print("Document have been successfully imported into Pinecone.")
