@@ -1,4 +1,5 @@
 import pinecone
+from bson import ObjectId
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from langchain_openai import OpenAIEmbeddings
@@ -59,12 +60,21 @@ class DataBaseInterface:
         result = self.index.query(vector=query_embedding,
                                   include_metadata=True, top_k=top_k)
 
-        print(result['matches'][0])
         # Retrieve the corresponding documents from MongoDB
-        if result and result['matches']:
-            mongo_ids = [match['metadata']['mongo_id'] for match in result['matches']]
-            documents = self.mongo_collection.find({"_id": {"$in": mongo_ids}})
-            return list(documents)
+        if result['matches']:
+            texts = []
+            for match in result['matches']:
+                mongo_id = match['metadata']['mongo_id']
+                print(mongo_id)
+                cursor = self.mongo_collection.find({"_id": ObjectId(mongo_id)})
+                # Extract the text from the cursor
+
+                for document in cursor:
+                    print(document)
+                    if 'text' in document:
+                        texts.append(document['text'])
+        
+            return texts  # Returning the list of texts
         else:
             return None
 
