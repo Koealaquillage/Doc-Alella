@@ -1,6 +1,7 @@
 import gradio as gr
 from gradio.themes.base import Base
 from Database_interface import DataBaseInterface
+from FileTextLoader import FileTextLoader
 import secret_key
 
 # Database Interface Setup
@@ -13,7 +14,8 @@ PineConeinterface = DataBaseInterface(indexName, secret_key.openai_key,
 # Define a function to process the uploaded files
 def process_files(files):
     if files:
-        PineConeinterface.import_documents(files)
+        text_data_from_files = FileTextLoader.load_all_files(files)
+        PineConeinterface.import_documents(text_data_from_files)
         return "Files processed successfully."
     return "No files to process."
 
