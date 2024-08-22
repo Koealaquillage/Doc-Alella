@@ -2,6 +2,7 @@ import gradio as gr
 from gradio.themes.base import Base
 from Database_interface import DataBaseInterface
 from FileTextLoader import FileTextLoader
+from langchain_community.llms import OpenAI
 import secret_key
 
 # Database Interface Setup
@@ -10,6 +11,7 @@ dbName = "Randomcuments"
 collectionName = "collection_of_text_blobs"
 
 TextLoader = FileTextLoader()
+
 
 PineConeinterface = DataBaseInterface(indexName, secret_key.openai_key,
                                       secret_key.pinecone_key,
@@ -26,8 +28,19 @@ def process_files(files):
 
 # Define a function to query the database with a question
 def query_question(question):
-    output1, output2 = PineConeinterface.query_data(question)
+    documents = PineConeinterface.query_data(question)
+    output1, output2 = analyze_documents(documents)
     return output1, output2
+
+def analyze_documents(documents):
+    llm = OpenAI(openai_api_key=secret_key.openai_key, temperature=0)
+    as_output = ``
+    retriever_output = ``
+    for document in documents:
+        as_output = str.join([as_output, document])
+        retriever_output = str.join([retriever_output,llm(as_output)])
+
+    return as_output, retriever_output
 
 # Gradio Interface
 with gr.Blocks(theme=Base(), title="Question Answering App using Vector Search + RAG") as demo:
