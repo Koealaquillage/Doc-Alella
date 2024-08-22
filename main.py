@@ -6,10 +6,14 @@ import secret_key
 
 # Database Interface Setup
 indexName = "alelladoc"
-pineconeEnvironment = "alelladoc"
+dbName = "Randomcuments"
+collectionName = "collection_of_text_blobs"
+
 PineConeinterface = DataBaseInterface(indexName, secret_key.openai_key,
                                       secret_key.pinecone_key,
-                                      pineconeEnvironment)
+                                      pineconeEnvironment, 
+                                      secret_key.mongodb_uri, dbName,
+                                      collectionName)
 
 # Define a function to process the uploaded files
 def process_files(files):
