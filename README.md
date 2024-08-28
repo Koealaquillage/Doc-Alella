@@ -35,4 +35,15 @@ You are free to:
 
 Under the following terms:
 
-- **Attributio
+- **Attribution**: You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- **NonCommercial**: You may not use the material for commercial purposes.
+
+No additional restrictions — You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits.
+
+### Full License Text
+
+For full details, you can view the license here: [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).
+
+### Ownership
+
+The code and intellectual property of this project are owned by **Guillaume Koenig**. While you are welcome to use and modify the project for non-commercial purposes, commercial exploitation requires prior permission from the owner.
