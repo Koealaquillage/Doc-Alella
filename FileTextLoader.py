@@ -2,10 +2,6 @@ import fitz
 import mammoth 
 import docx  
 
-import fitz  # PyMuPDF
-import mammoth
-import docx
-
 class FileTextLoader:
 
     def __init__(self):
