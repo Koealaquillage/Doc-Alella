@@ -37,7 +37,8 @@ def analyze_documents(documents):
     as_output = ""
     retriever_output = ""
     for document in documents:
-        as_output = str.join([as_output, document])
+        print(document)
+        as_output = str.join([as_output, strdocument])
         retriever_output = str.join([retriever_output,llm(as_output)])
 
     return as_output, retriever_output
