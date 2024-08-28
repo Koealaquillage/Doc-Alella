@@ -65,14 +65,16 @@ class DataBaseInterface:
             texts = []
             for match in result['matches']:
                 mongo_id = match['metadata']['mongo_id']
-                print(mongo_id)
                 cursor = self.mongo_collection.find({"_id": ObjectId(mongo_id)})
                 # Extract the text from the cursor
 
                 for document in cursor:
-                    print(document)
+                    
                     if 'text' in document:
-                        texts.append(document['text'])
+                        try: 
+                            texts.append(str.join(document['text']))
+                        except: 
+                            pass
         
             return texts  # Returning the list of texts
         else:
