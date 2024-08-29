@@ -59,7 +59,6 @@ class DataBaseInterface:
         # Perform similarity search in Pinecone
         result = self.index.query(vector=query_embedding,
                                   include_metadata=True, top_k=top_k)
-
         # Retrieve the corresponding documents from MongoDB
         if result['matches']:
             texts = []
@@ -72,7 +71,8 @@ class DataBaseInterface:
                     
                     if 'text' in document:
                         try: 
-                            texts.append(str.join(document['text']))
+                            text = "".join(document['text'])
+                            texts.append(text)
                         except: 
                             pass
         
