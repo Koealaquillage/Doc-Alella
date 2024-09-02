@@ -4,7 +4,7 @@ SemantiStore is a web application designed to enable semantic search in large co
 
 ## Repository Structure
 
-- **main.py**: The entry point of the application. This script contains the Gradio interface that connects the frontend with the backend functionalities.
+- **main.py**: The entry point of the application. This script contains the streamlit interface that connects the frontend with the backend functionalities.
 - **Database_interface.py**: This file contains the `DatabaseInterface` class, which manages connections to the MongoDB and Pinecone databases, as well as document querying and uploading operations.
 - **FileTextLoader.py**: This file contains the `FileTextLoader` class, responsible for handling file uploads and storing documents in the database in various formats (txt, doc, docx, pdf).
 
