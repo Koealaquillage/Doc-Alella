@@ -2,8 +2,7 @@ import streamlit as st
 from Database_interface import DataBaseInterface
 from FileTextLoader import FileTextLoader
 from langchain_openai import OpenAI
-import secret_key
-
+#import secret_key
 # Database Interface Setup
 indexName = "alelladoc"
 dbName = "Randomcuments"
@@ -11,9 +10,9 @@ collectionName = "collection_of_text_blobs"
 
 TextLoader = FileTextLoader()
 
-PineConeinterface = DataBaseInterface(indexName, secret_key.openai_key,
-                                      secret_key.pinecone_key,
-                                      secret_key.mongodb_uri, dbName,
+PineConeinterface = DataBaseInterface(indexName, st.secrets["openai_key"],
+                                      st.secrets["pinecone_key"],
+                                      st.secrets["mongodb_uri"], dbName,
                                       collectionName)
 
 # Define a function to process the uploaded files
