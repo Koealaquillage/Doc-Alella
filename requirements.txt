@@ -1,0 +1,7 @@
+streamlit
+pinecone-client
+pymongo
+langchain-openai
+PyMuPDF
+mammoth
+python-docx
